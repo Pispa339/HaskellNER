@@ -16,37 +16,19 @@ main = do
     let persons = (lines personsCont)
 
     let dateWords = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Monday", "Tuesday", "Wednsday", "Thursday", "Friday", "Saturday", "Sunday"]
-    let suffixes = ["of", "the"]
 
-    let result = iterLines textToTag countries cities persons dateWords []
+    let result = tagLines textToTag countries cities persons dateWords []
     print textToTag
     print "-------------------"
 
     print result
 
-    writeFile "tagged.txt" $ unwords result
+    writeFile "tagged.txt" $ unlines result
 
-iterLines :: [String] -> [String] -> [String] -> [String] -> [String] -> [String] -> [String]
-iterLines [] _ _ _ _ x = x
---iterLines lines countries cities persons dateWords result = iterLinesCSW (checkForMoney(checkForDateWords (iterLinesTWC lines countries cities persons []) dateWords []) []) countries cities persons []
-iterLines lines countries cities persons dateWords result = iterLinesCSW (checkForMoney(checkForDateWords (iterLinesTWC (iterLinesFOS lines []) countries cities persons []) dateWords []) []) countries cities persons []
---iterLines lines countries cities persons dateWords result = iterLinesFOS lines []
-
-
-iterLinesCSW :: [String] -> [String] -> [String] -> [String] -> [String] -> [String]
-iterLinesCSW [] _ _ _ x = x
-iterLinesCSW (x:xs) countries cities persons result =
-    iterLinesCSW xs countries cities persons (checkSingleWords [x] countries cities persons result)
-
-iterLinesTWC :: [String] -> [String] -> [String] -> [String] -> [String] -> [String]
-iterLinesTWC [] _ _ _ x = x
-iterLinesTWC (x:xs) countries cities persons result = (iterTwoWordChunks (x:xs) countries cities persons result)
-
-iterLinesFOS :: [String] -> [String] -> [String]
-iterLinesFOS [] x = x
-iterLinesFOS (x:xs) result =
-    iterLinesFOS xs (checkForOrganizations (splitOn " " x) result)
-
+tagLines :: [String] -> [String] -> [String] -> [String] -> [String] -> [String] -> [String]
+tagLines [] _ _ _ _ x = x
+tagLines (x:xs) countries cities persons dateWords result =
+    tagLines xs countries cities persons dateWords (result ++ [(asList (checkSingleWords (checkForMoney(checkForDateWords (iterTwoWordChunks (checkForOrganizations (splitOn " " x) []) countries cities persons []) dateWords []) []) countries cities persons []))])
 
 iterTwoWordChunks :: [String] -> [String] -> [String] -> [String] -> [String] -> [String]
 iterTwoWordChunks [] _ _ _ x = x
@@ -97,10 +79,8 @@ checkForMoney (x:xs) result
 checkForOrganizations :: [String] -> [String] -> [String]
 checkForOrganizations [] x = x
 checkForOrganizations (x:xs) result
-    | (length organizationList) > 2 && (head organizationList) `elem` ["of", "Of"] && (last (last organizationList)) `elem` ['.', ','] = checkForOrganizations (drop (length organizationList) (x:xs)) (result ++ [(head organizationList)] ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ (asList (init (tail organizationList))) ++ " " ++ (init (last organizationList)) ++ "</ENAMEX>" ++ [(last (last organizationList))])])
-    | (length organizationList) > 2 && (head organizationList) `elem` ["of", "Of"] = checkForOrganizations (drop (length organizationList) (x:xs)) (result ++ [(head organizationList)] ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ (asList (tail organizationList)) ++ "</ENAMEX>")])
-    | (length organizationList) > 2 && (head organizationList) == "The" && (last (last organizationList)) `elem` ['.', ','] = checkForOrganizations (drop (length organizationList) (x:xs)) (result ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ (asList (init organizationList)) ++ " " ++ (init (last organizationList)) ++ "</ENAMEX>" ++ [(last (last organizationList))])])
-    | (length organizationList) > 2 && (head organizationList) == "The" = checkForOrganizations (drop (length organizationList) (x:xs)) (result ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ (asList organizationList) ++ "</ENAMEX>")])
+    | (length organizationList) > 2 && (head organizationList) `elem` ["of", "Of", "The", "the"] && (last (last organizationList)) `elem` ['.', ','] = checkForOrganizations (drop (length organizationList) (x:xs)) (result ++ [(head organizationList)] ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ (asList (init (tail organizationList))) ++ " " ++ (init (last organizationList)) ++ "</ENAMEX>" ++ [(last (last organizationList))])])
+    | (length organizationList) > 2 && (head organizationList) `elem` ["of", "Of", "The", "the"] = checkForOrganizations (drop (length organizationList) (x:xs)) (result ++ [(head organizationList)] ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ (asList (tail organizationList)) ++ "</ENAMEX>")])
     | otherwise = checkForOrganizations xs (result ++ [x])
     where organizationList = (formOrganizationList (x:xs) [])
 
