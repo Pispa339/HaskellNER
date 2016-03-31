@@ -29,8 +29,8 @@ main = do
 iterLines :: [String] -> [String] -> [String] -> [String] -> [String] -> [String] -> [String]
 iterLines [] _ _ _ _ x = x
 --iterLines lines countries cities persons dateWords result = iterLinesCSW (checkForMoney(checkForDateWords (iterLinesTWC lines countries cities persons []) dateWords []) []) countries cities persons []
---iterLines lines countries cities persons dateWords result = iterLinesCSW (checkForMoney(checkForDateWords (iterLinesTWC (iterLinesFOS lines []) countries cities persons []) dateWords []) []) countries cities persons []
-iterLines lines countries cities persons dateWords result = iterLinesFOS lines []
+iterLines lines countries cities persons dateWords result = iterLinesCSW (checkForMoney(checkForDateWords (iterLinesTWC (iterLinesFOS lines []) countries cities persons []) dateWords []) []) countries cities persons []
+--iterLines lines countries cities persons dateWords result = iterLinesFOS lines []
 
 
 iterLinesCSW :: [String] -> [String] -> [String] -> [String] -> [String] -> [String]
@@ -40,8 +40,7 @@ iterLinesCSW (x:xs) countries cities persons result =
 
 iterLinesTWC :: [String] -> [String] -> [String] -> [String] -> [String] -> [String]
 iterLinesTWC [] _ _ _ x = x
-iterLinesTWC (x:xs) countries cities persons result =
-    iterLinesTWC xs countries cities persons (iterTwoWordChunks [x] countries cities persons result)
+iterLinesTWC (x:xs) countries cities persons result = (iterTwoWordChunks (x:xs) countries cities persons result)
 
 iterLinesFOS :: [String] -> [String] -> [String]
 iterLinesFOS [] x = x
@@ -52,9 +51,9 @@ iterLinesFOS (x:xs) result =
 iterTwoWordChunks :: [String] -> [String] -> [String] -> [String] -> [String] -> [String]
 iterTwoWordChunks [] _ _ _ x = x
 iterTwoWordChunks (x:xs) countries cities persons result
-    | twoWordChunk `elem` countries = iterTwoWordChunks (tail xs) countries cities persons (result ++ [("<ENAMEX TYPE=\"LOCATION\">" ++ twoWordChunk ++"</ENAMEX>")])
-    | twoWordChunk `elem` cities = iterTwoWordChunks (tail xs) countries cities persons (result ++ [("<ENAMEX TYPE=\"LOCATION\">" ++ twoWordChunk ++"</ENAMEX>")])
-    | x `elem` persons && (head xs) `elem` persons = iterTwoWordChunks (tail xs) countries cities persons (result ++ [("<ENAMEX TYPE=\"PERSON\">" ++ twoWordChunk ++"</ENAMEX>")])
+    | (null xs) == False && twoWordChunk `elem` countries = iterTwoWordChunks (tail xs) countries cities persons (result ++ [("<ENAMEX TYPE=\"LOCATION\">" ++ twoWordChunk ++"</ENAMEX>")])
+    | (null xs) == False && twoWordChunk `elem` cities = iterTwoWordChunks (tail xs) countries cities persons (result ++ [("<ENAMEX TYPE=\"LOCATION\">" ++ twoWordChunk ++"</ENAMEX>")])
+    | (null xs) == False && x `elem` persons && (head xs) `elem` persons = iterTwoWordChunks (tail xs) countries cities persons (result ++ [("<ENAMEX TYPE=\"PERSON\">" ++ twoWordChunk ++"</ENAMEX>")])
     | otherwise = iterTwoWordChunks (xs) countries cities persons (result ++ [x])
     where twoWordChunk = (x ++ " " ++ (head xs))
 
