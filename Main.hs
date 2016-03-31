@@ -27,7 +27,8 @@ main = do
 
 iterLines :: [String] -> [String] -> [String] -> [String] -> [String] -> [String] -> [String]
 iterLines [] _ _ _ _ x = x
-iterLines lines countries cities persons dateWords result = iterLinesCSW (checkForMoney(checkForDateWords (iterLinesTWC lines countries cities persons []) dateWords []) []) countries cities persons []
+--iterLines lines countries cities persons dateWords result = iterLinesCSW (checkForMoney(checkForDateWords (iterLinesTWC lines countries cities persons []) dateWords []) []) countries cities persons []
+iterLines lines countries cities persons dateWords result = iterLinesCSW (checkForMoney(checkForDateWords (iterLinesTWC (iterLinesFOS lines []) countries cities persons []) dateWords []) []) countries cities persons []
 
 
 iterLinesCSW :: [String] -> [String] -> [String] -> [String] -> [String] -> [String]
@@ -38,7 +39,12 @@ iterLinesCSW (x:xs) countries cities persons result =
 iterLinesTWC :: [String] -> [String] -> [String] -> [String] -> [String] -> [String]
 iterLinesTWC [] _ _ _ x = x
 iterLinesTWC (x:xs) countries cities persons result =
-    iterLinesTWC xs countries cities persons (iterTwoWordChunks (splitOn " " x) countries cities persons result)
+    iterLinesTWC xs countries cities persons (iterTwoWordChunks [x] countries cities persons result)
+
+iterLinesFOS :: [String] -> [String] -> [String]
+iterLinesFOS [] x = x
+iterLinesFOS (x:xs) result =
+    iterLinesFOS xs (checkForOrganizations (splitOn " " x) result)
 
 
 iterTwoWordChunks :: [String] -> [String] -> [String] -> [String] -> [String] -> [String]
@@ -86,3 +92,11 @@ checkForMoney (x:xs) result
     | (length x) > 1 && (head x) == '$' && (head xs) `elem` ["million", "thousand", "hundred"] = checkForMoney (init xs) (result ++ [("<NUMEX TYPE=\"MONEY\">" ++ x ++ " " ++ (head xs) ++"</NUMEX>")])
     | (length x) > 1 && (head x) == '$' = checkForMoney xs (result ++ [("<NUMEX TYPE=\"MONEY\">" ++ x ++"</NUMEX>")])
     | otherwise = checkForMoney xs (result ++ [x])
+
+checkForOrganizations :: [String] -> [String] -> [String]
+checkForOrganizations [] x = x
+checkForOrganizations (x:xs) result
+    | (length xs) > 2 && (length x) > 1 && (head x) `elem` ['A' .. 'Z'] && ((head (head xs)) `elem` ['A' .. 'Z'] || (head xs) `elem` ["of", "the", "Inc"]) && ((head (head (init xs))) `elem` ['A' .. 'Z'] || (head (init xs)) `elem` ["of", "the", "Inc"]) =
+    checkForOrganizations (tail (tail xs)) (result ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ x ++ " " ++ (head xs) ++ (head (init xs)) ++"</ENAMEX>")])
+    | (length xs) > 2 && (head x) `elem` ['A' .. 'Z'] && (head xs) `elem` ["Inc"] = checkForOrganizations (tail xs) (result ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ x ++ " " ++ (head xs) ++"</ENAMEX>")])
+    | otherwise = checkForOrganizations xs (result ++ [x])
