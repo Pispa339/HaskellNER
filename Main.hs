@@ -1,6 +1,7 @@
 import qualified Data.Text    as Text
 import qualified Data.Text.IO as Text
 import Data.List.Split
+import Data.List
 import System.IO
 
 main = do
@@ -28,7 +29,8 @@ main = do
 iterLines :: [String] -> [String] -> [String] -> [String] -> [String] -> [String] -> [String]
 iterLines [] _ _ _ _ x = x
 --iterLines lines countries cities persons dateWords result = iterLinesCSW (checkForMoney(checkForDateWords (iterLinesTWC lines countries cities persons []) dateWords []) []) countries cities persons []
-iterLines lines countries cities persons dateWords result = iterLinesCSW (checkForMoney(checkForDateWords (iterLinesTWC (iterLinesFOS lines []) countries cities persons []) dateWords []) []) countries cities persons []
+--iterLines lines countries cities persons dateWords result = iterLinesCSW (checkForMoney(checkForDateWords (iterLinesTWC (iterLinesFOS lines []) countries cities persons []) dateWords []) []) countries cities persons []
+iterLines lines countries cities persons dateWords result = iterLinesFOS lines []
 
 
 iterLinesCSW :: [String] -> [String] -> [String] -> [String] -> [String] -> [String]
@@ -96,7 +98,22 @@ checkForMoney (x:xs) result
 checkForOrganizations :: [String] -> [String] -> [String]
 checkForOrganizations [] x = x
 checkForOrganizations (x:xs) result
-    | (length xs) > 2 && (length x) > 1 && (head x) `elem` ['A' .. 'Z'] && ((head (head xs)) `elem` ['A' .. 'Z'] || (head xs) `elem` ["of", "the", "Inc"]) && ((head (head (init xs))) `elem` ['A' .. 'Z'] || (head (init xs)) `elem` ["of", "the", "Inc"]) =
-    checkForOrganizations (tail (tail xs)) (result ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ x ++ " " ++ (head xs) ++ (head (init xs)) ++"</ENAMEX>")])
-    | (length xs) > 2 && (head x) `elem` ['A' .. 'Z'] && (head xs) `elem` ["Inc"] = checkForOrganizations (tail xs) (result ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ x ++ " " ++ (head xs) ++"</ENAMEX>")])
+    | (length organizationList) > 2 && (head organizationList) `elem` ["of", "Of"] && (last (last organizationList)) `elem` ['.', ','] = checkForOrganizations (drop (length organizationList) (x:xs)) (result ++ [(head organizationList)] ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ (asList (init (tail organizationList))) ++ " " ++ (init (last organizationList)) ++ "</ENAMEX>" ++ [(last (last organizationList))])])
+    | (length organizationList) > 2 && (head organizationList) `elem` ["of", "Of"] = checkForOrganizations (drop (length organizationList) (x:xs)) (result ++ [(head organizationList)] ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ (asList (tail organizationList)) ++ "</ENAMEX>")])
+    | (length organizationList) > 2 && (head organizationList) == "The" && (last (last organizationList)) `elem` ['.', ','] = checkForOrganizations (drop (length organizationList) (x:xs)) (result ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ (asList (init organizationList)) ++ " " ++ (init (last organizationList)) ++ "</ENAMEX>" ++ [(last (last organizationList))])])
+    | (length organizationList) > 2 && (head organizationList) == "The" = checkForOrganizations (drop (length organizationList) (x:xs)) (result ++ [("<ENAMEX TYPE=\"ORGANIZATION\">" ++ (asList organizationList) ++ "</ENAMEX>")])
     | otherwise = checkForOrganizations xs (result ++ [x])
+    where organizationList = (formOrganizationList (x:xs) [])
+
+formOrganizationList words org = if (null words) == False
+                                    then if (length (head words)) > 1 && ((head (head words)) `elem` ['A' .. 'Z'] || (head words) `elem` ["of", "the", "Inc"])
+                                        then formOrganizationList (tail words) (org ++ [(head words)])
+                                        else if (length org) < 2
+                                            then []
+                                            else org
+                                        else if (length org) < 2
+                                            then []
+                                            else org
+
+asList :: [String] -> String
+asList ss = (intercalate " " ss)
