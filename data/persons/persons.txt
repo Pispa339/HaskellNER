@@ -2234,7 +2234,6 @@ Isis
 Isla
 Isobel
 Italia
-Italy
 Itzayana
 Itzel
 Ivana
@@ -4758,6 +4757,7 @@ Veda
 Venice
 Venus
 Vera
+Verdi
 Veronica
 Vesper
 Vianey

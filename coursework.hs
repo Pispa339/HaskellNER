@@ -23,7 +23,39 @@ main = do
 
     print result
 
-    writeFile "tagged.txt" $ unlines result
+    writeFile "result.txt" $ unlines result
+
+    tagged <- readFile ("tagged.txt")
+    let taggedLines = (lines tagged)
+    myTagged <- readFile ("result.txt")
+    let myTaggedLines = (lines myTagged)
+
+    let tagsFromTagged = getTags taggedLines []
+    let tagsFromMyTagged = getTags myTaggedLines []
+
+    print ("_______")
+    print tagsFromTagged
+    print ("*******")
+    print tagsFromMyTagged
+
+getTags :: [String] -> [String] -> [String]
+getTags [] x = x
+getTags (x:xs) confirmedTags = (getTags xs (confirmedTags ++ (getTagsFromLine (splitOn " " x) [])))
+
+getTagsFromLine :: [String] -> [String] -> [String]
+getTagsFromLine [] x = x
+getTagsFromLine (x:xs) confirmedTags
+    | (x == "<ENAMEX" || x == "<TIMEX" || x == "<NUMEX")  = (getTagsFromLine (drop (length (splitOn " " tagContents)) (x:xs)) (confirmedTags ++ [tagContents]))
+    | otherwise = getTagsFromLine (xs) confirmedTags
+    where tagContents = (getTagContents (x:xs) "")
+
+getTagContents :: [String] -> String -> String
+getTagContents [] x = x
+getTagContents (x:xs) tagContent
+    | "</ENAMEX>" `isInfixOf` x = (tagContent ++ x)
+    | "</TIMEX>" `isInfixOf` x = (tagContent ++ x)
+    | "</NUMEX>" `isInfixOf` x = (tagContent ++ x)
+    | otherwise = getTagContents xs (tagContent ++ x ++ " ")
 
 tagLines :: [String] -> [String] -> [String] -> [String] -> [String] -> [String] -> [String]
 tagLines [] _ _ _ _ x = x
